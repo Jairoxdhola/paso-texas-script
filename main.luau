@@ -31,6 +31,42 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = getParent()
 
+-- MOBILE TOGGLE BUTTON (ADDED)
+local MobileToggle = Instance.new("TextButton")
+MobileToggle.Name = "MobileToggle"
+MobileToggle.Size = UDim2.new(0, 50, 0, 50)
+MobileToggle.Position = UDim2.new(0, 10, 0.5, -25)
+MobileToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MobileToggle.Text = "S"
+MobileToggle.Font = Enum.Font.GothamBold
+MobileToggle.TextSize = 20
+MobileToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+MobileToggle.Parent = ScreenGui
+
+Instance.new("UICorner", MobileToggle).CornerRadius = UDim.new(1, 0)
+Instance.new("UIStroke", MobileToggle).Color = Color3.fromRGB(60, 60, 70)
+
+-- Draggable Logic for Mobile Button
+local mDragging, mDragInput, mDragStart, mStartPos
+MobileToggle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mDragging = true
+        mDragStart = input.Position
+        mStartPos = MobileToggle.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and mDragging then
+        local delta = input.Position - mDragStart
+        MobileToggle.Position = UDim2.new(mStartPos.X.Scale, mStartPos.X.Offset + delta.X, mStartPos.Y.Scale, mStartPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mDragging = false
+    end
+end)
+
 -- INTRO SCREEN
 local IntroFrame = Instance.new("CanvasGroup")
 IntroFrame.Name = "IntroFrame"
@@ -109,8 +145,8 @@ Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
 -- MAIN MENU
 local MainFrame = Instance.new("CanvasGroup")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 320, 0, 240) -- Made it longer (wider/taller)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
+MainFrame.Size = UDim2.new(0, 320, 0, 260) -- Increased height for KeyInfo
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -130)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 MainFrame.BackgroundTransparency = 0.05
 MainFrame.Visible = false
@@ -161,6 +197,17 @@ FarmButton.TextColor3 = Color3.fromRGB(255, 80, 80)
 FarmButton.Parent = ContentFrame
 Instance.new("UICorner", FarmButton).CornerRadius = UDim.new(0, 12)
 
+-- KEY INFO LABEL (ADDED)
+local KeyInfo = Instance.new("TextLabel")
+KeyInfo.Size = UDim2.new(1, 0, 0, 30)
+KeyInfo.Position = UDim2.new(0, 0, 0, 130)
+KeyInfo.Text = "Press [K] to toggle menu"
+KeyInfo.Font = Enum.Font.Gotham
+KeyInfo.TextSize = 12
+KeyInfo.TextColor3 = Color3.fromRGB(180, 180, 180)
+KeyInfo.BackgroundTransparency = 1
+KeyInfo.Parent = ContentFrame
+
 local SliderLabel = Instance.new("TextLabel")
 SliderLabel.Size = UDim2.new(1, 0, 0, 30)
 SliderLabel.Position = UDim2.new(0, 0, 0, 60)
@@ -171,7 +218,7 @@ SliderLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 SliderLabel.BackgroundTransparency = 1
 SliderLabel.Parent = ContentFrame
 
--- Draggable Logic
+-- Draggable Logic for Main Menu
 local dragging, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -199,6 +246,16 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
+-- Function to toggle menu
+local function toggleMenu()
+    MENU_VISIBLE = not MENU_VISIBLE
+    MainFrame.Visible = true
+    TweenService:Create(MainFrame, TweenInfo.new(0.4), {GroupTransparency = MENU_VISIBLE and 0 or 1}):Play()
+    if not MENU_VISIBLE then
+        task.delay(0.4, function() if not MENU_VISIBLE then MainFrame.Visible = false end end)
+    end
+end
+
 -- Button Actions
 TranslateBtn.MouseButton1Click:Connect(function()
     if CURRENT_LANG == "EN" then
@@ -220,12 +277,11 @@ CloseBtn.MouseButton1Click:Connect(function()
     TweenService:Create(IntroFrame, TweenInfo.new(0.5), {GroupTransparency = 1}):Play()
     task.delay(0.5, function()
         IntroFrame.Visible = false
-        MainFrame.Visible = true
-        MainFrame.GroupTransparency = 1
-        TweenService:Create(MainFrame, TweenInfo.new(0.5), {GroupTransparency = 0}):Play()
-        MENU_VISIBLE = true
+        toggleMenu()
     end)
 end)
+
+MobileToggle.MouseButton1Click:Connect(toggleMenu)
 
 -- Helper Functions
 local function getPath(root, ...)
@@ -384,8 +440,7 @@ end)
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.KeyCode == Enum.KeyCode.K and MainFrame.Visible then
-        MENU_VISIBLE = not MENU_VISIBLE
-        TweenService:Create(MainFrame, TweenInfo.new(0.4), {GroupTransparency = MENU_VISIBLE and 0 or 1}):Play()
+        toggleMenu()
     end
 end)
 
